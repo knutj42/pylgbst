@@ -777,6 +777,7 @@ class MsgPortOutput(DownstreamMsg):
             and msg.port == self.port
             and (not self.wait_complete and msg.is_in_progress() or
                  msg.is_completed() or
+                 msg.is_discarded() or
                  self.is_buffered)
         )
 
