@@ -469,3 +469,104 @@ class RemoteHandset(Hub):
                 self.voltage = self.peripherals[port]
             elif port == self.PORT_RSSI:
                 self.port_RSSI = self.peripherals[port]
+
+
+class TechnicHub(Hub):
+    """
+    Class implementing Lego Technic Hub specifics
+    """
+    DEFAULT_NAME = "Technic Hub"
+
+    # peripherals
+    PORT_A = 0x00
+    PORT_B = 0x01
+    PORT_C = 0x02
+    PORT_D = 0x03
+
+    # built-in sensors
+    PORT_LED = 0x32
+    PORT_CURRENT = 0x3b
+    PORT_VOLTAGE = 0x3c
+    PORT_TEMPERATURE1 = 0x3d
+    PORT_TEMPERATURE2 = 0x60
+    PORT_ACCELEROMETER = 0x61
+    PORT_GYRO_SENSOR = 0x62
+    PORT_TILT_SENSOR = 0x63
+    PORT_GEST_SENSOR = 0x64
+
+    def __init__(self, connection=None):
+        if connection is None:
+            connection = get_connection_auto(hub_name=self.DEFAULT_NAME)
+        super().__init__(connection)
+
+        self.port_A = None
+        self.port_B = None
+        self.port_C = None
+        self.port_D = None
+        self.led = None
+        self.current = None
+        self.voltage = None
+        self.temperature_1 = None
+        self.temperature_2 = None
+        self.accelerometer = None
+        self.gyro_sensor = None
+        self.tilt_sensor = None
+        self.gest_sensor = None
+
+        self._wait_for_devices()
+
+    def _wait_for_devices(self, get_dev_set=None):
+        if not get_dev_set:
+            get_dev_set = lambda: (self.led,
+                                   self.current,
+                                   self.voltage,
+                                   self.temperature_1,
+                                   self.temperature_2,
+                                   self.accelerometer,
+                                   self.gyro_sensor,
+                                   self.tilt_sensor,
+                                   self.gest_sensor,
+                                  )
+
+        for num in range(0, 100):
+            devices = get_dev_set()
+            if all(devices):
+                log.debug("All devices are present: %s", devices)
+                return
+            log.debug("Waiting for builtin devices to appear: %s", devices)
+            time.sleep(0.1)
+        log.warning("Got only these devices: %s", get_dev_set())
+
+    def _handle_device_change(self, msg):
+        super()._handle_device_change(msg)
+        if (
+                isinstance(msg, MsgHubAttachedIO)
+                and msg.event != MsgHubAttachedIO.EVENT_DETACHED
+        ):
+            port = msg.port
+            if port == self.PORT_A:
+                self.port_A = self.peripherals[port]
+            elif port == self.PORT_B:
+                self.port_B = self.peripherals[port]
+            elif port == self.PORT_C:
+                self.port_C = self.peripherals[port]
+            elif port == self.PORT_D:
+                self.port_D = self.peripherals[port]
+            elif port == self.PORT_LED:
+                self.led = self.peripherals[port]
+            elif port == self.PORT_CURRENT:
+                self.current = self.peripherals[port]
+            elif port == self.PORT_VOLTAGE:
+                self.voltage = self.peripherals[port]
+            elif port == self.PORT_TEMPERATURE1:
+                self.temperature_1 = self.peripherals[port]
+            elif port == self.PORT_TEMPERATURE2:
+                self.temperature_2 = self.peripherals[port]
+            elif port == self.PORT_ACCELEROMETER:
+                self.accelerometer = self.peripherals[port]
+            elif port == self.PORT_GYRO_SENSOR:
+                self.gyro_sensor = self.peripherals[port]
+            elif port == self.PORT_TILT_SENSOR:
+                self.tilt_sensor = self.peripherals[port]
+            elif port == self.PORT_GEST_SENSOR:
+                self.gest_sensor = self.peripherals[port]
