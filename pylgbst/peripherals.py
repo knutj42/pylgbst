@@ -434,7 +434,7 @@ class Motor(BaseMotor):
 
         self._send_cmd(self.SUBCMD_SET_DEC_TIME, params)
 
-    def start_speed(self, speed_primary=1.0, speed_secondary=None, max_power=1.0, use_profile=0b11):
+    def start_speed(self, speed_primary=1.0, speed_secondary=None, max_power=1.0, use_profile=0b11, wait_complete=True):
         """
         https://lego.github.io/lego-ble-wireless-protocol-docs/index.html#output-sub-command-startspeed-speed-maxpower-useprofile-0x07
         """
@@ -449,7 +449,7 @@ class Motor(BaseMotor):
         params += pack("<B", int(100 * max_power))
         params += pack("<B", use_profile)
 
-        self._send_cmd(self.SUBCMD_START_SPEED, params)
+        self._send_cmd(self.SUBCMD_START_SPEED, params, wait_complete)
 
     def timed(self, seconds, speed_primary=1.0, speed_secondary=None, max_power=1.0, end_state=END_STATE_BRAKE,
               use_profile=0b11, wait_complete=True):
