@@ -471,7 +471,7 @@ class RemoteHandset(Hub):
                 self.port_RSSI = self.peripherals[port]
 
 
-class TechnicHub(Hub):
+class TechnicHubKnut(Hub):
     """
     Class implementing Lego Technic Hub specifics
     """
@@ -570,3 +570,135 @@ class TechnicHub(Hub):
                 self.tilt_sensor = self.peripherals[port]
             elif port == self.PORT_GEST_SENSOR:
                 self.gest_sensor = self.peripherals[port]
+
+
+
+class TechnicHub(Hub): #porvided by twin1nap
+    """
+    Class implementing Lego TechnicHub specifics
+    https://www.lego.com/en-pt/product/technic-hub-88012
+
+    :type led: LEDRGB
+    :type current: Current
+    :type voltage: Voltage
+    :type port_A: Peripheral
+    :type port_B: Peripheral
+    :type port_C: Peripheral
+    :type port_D: Peripheral
+    :type port_AB: Virtual Port
+    """
+
+    DEFAULT_NAME = "Technic Hub"
+
+    # PORTS
+    PORT_A = 0x00
+    PORT_B = 0x01
+    PORT_C = 0X02
+    PORT_D = 0x03
+    PORT_VIRTUAL1 = 0X10 # changed name
+    PORT_VIRTUAL2 = None # this added. port still unkown, not able to test for it yet
+    PORT_LED = 0x32
+    PORT_CURRENT = 0x3B
+    PORT_VOLTAGE = 0x3C
+
+    def __init__(self, connection=None):
+        if connection is None:
+            connection = get_connection_auto(hub_name=self.DEFAULT_NAME)
+
+        super().__init__(connection)
+
+        self.button = Button(self)
+        self.led = None
+        self.port_A = None
+        self.port_B = None
+        self.port_C = None
+        self.port_D = None
+        self.port_AB = None
+        self.port_CD = None # this added
+        self.current = None
+        self.voltage = None
+
+        self._wait_for_devices()
+        self._wait_for_Port_AB()
+        self._wait_for_Port_CD() # this added 
+
+    def _wait_for_devices(self, get_dev_set=None):
+        if not get_dev_set:
+            get_dev_set = lambda: (self.led, self.current, self.voltage)
+
+        for num in range(0, 100):
+            devices = get_dev_set()
+            if all(devices):
+                log.debug("All devices are present: %s", devices)
+                return
+            log.debug("Waiting for builtin devices to appear: %s", devices)
+            time.sleep(0.1)
+        log.warning("Got only these devices: %s", get_dev_set())
+
+    def _wait_for_Port_AB(self, get_dev_set=None):
+        if not get_dev_set:
+            get_dev_set = lambda: (self.port_A, self.port_B)
+
+        for num in range(0, 10):
+            devices = get_dev_set()
+            if all(devices):
+                log.debug("All devices are present: %s", devices)
+                
+                cmd_type = MsgVirtualPortSetup.CMD_CONNECT
+                ports_to_combine = (self.PORT_A, self.PORT_B)
+                msg_combine = MsgVirtualPortSetup(cmd_type, ports_to_combine)
+                self.send(msg_combine)
+
+                return
+            log.debug("Waiting for devices to appear: %s", devices)
+            time.sleep(0.1)
+        log.warning("No virtual port AB added due to not enough devices atached to port_A and port_B")
+
+    def _wait_for_Port_CD(self, get_dev_set=None): # this added
+        if not get_dev_set:
+            get_dev_set = lambda: (self.port_C, self.port_D)
+
+        for num in range(0, 10):
+            devices = get_dev_set()
+            if all(devices):
+                log.debug("All devices are present: %s", devices)
+                
+                cmd_type = MsgVirtualPortSetup.CMD_CONNECT
+                ports_to_combine = (self.PORT_C, self.PORT_D)
+                msg_combine = MsgVirtualPortSetup(cmd_type, ports_to_combine)
+                self.send(msg_combine)
+
+                return
+            log.debug("Waiting for devices to appear: %s", devices)
+            time.sleep(0.1)
+        log.warning("No virtual port CD added due to not enough devices atached to port_C and port_D")
+
+    
+
+    # noinspection PyTypeChecker
+    def _handle_device_change(self, msg):
+        super()._handle_device_change(msg)
+        if (
+                isinstance(msg, MsgHubAttachedIO)
+                and msg.event != MsgHubAttachedIO.EVENT_DETACHED
+        ):
+            port = msg.port
+            if port == self.PORT_A:
+                self.port_A = self.peripherals[port]
+            elif port == self.PORT_B:
+                self.port_B = self.peripherals[port]
+            elif port == self.PORT_C:
+                self.port_C = self.peripherals[port]
+            elif port == self.PORT_D:
+                self.port_D = self.peripherals[port]
+            elif port == self.PORT_VIRTUAL1:
+                if self.port_A == None or self.port_B == None: #-|
+                    self.port_CD = self.peripherals[port]      # |
+                else:                                          # | this added
+                    self.port_AB = self.peripherals[port]      #-|
+            elif port == self.PORT_LED:
+                self.led = self.peripherals[port]
+            elif port == self.PORT_CURRENT:
+                self.current = self.peripherals[port]
+            elif port == self.PORT_VOLTAGE:
+                self.voltage = self.peripherals[port]

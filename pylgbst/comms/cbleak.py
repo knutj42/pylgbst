@@ -68,7 +68,7 @@ class BleakDriver(Connection):
         # below command is Advertising name request update
         await bleak.write_char(MOVE_HUB_HW_UUID_CHAR, bytearray([0x05, 0x00, 0x01, 0x01, 0x05]))
         while not self._abort:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)
             if self.req_queue.qsize() != 0:
                 data = self.req_queue.get()
                 await bleak.write(data[0], data[1])
